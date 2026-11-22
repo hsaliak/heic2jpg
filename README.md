@@ -24,6 +24,16 @@ By default, the command writes `path/to/photo.jpg`. Use `-p` (or `--pdf`) to wri
 
 This writes `path/to/photo.pdf`. The command prints the output path, leaves the original image unchanged, and does not overwrite an existing output file.
 
+For a single-page PDF under 300 KB (300,000 bytes), use:
+
+```sh
+./heic2jpg --pdf-small path/to/photo.HEIC
+```
+
+This writes `path/to/photo-small.pdf` without replacing the regular PDF.
+It reduces image resolution and JPEG quality as needed. If it cannot meet the
+size limit, it reports an error without writing a PDF.
+
 ## License
 
 [Apache License 2.0](LICENSE).

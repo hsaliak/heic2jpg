@@ -2,16 +2,41 @@
 """Convert an image to JPEG or PDF in the same directory."""
 
 import argparse
+from io import BytesIO
 from pathlib import Path
+
+
+SMALL_PDF_LIMIT = 300_000
+
+
+def small_pdf(original):
+    for side in (2400, 2100, 1800, 1500, 1200, 900, 600, 300):
+        image = original.copy()
+        image.thumbnail((side, side))
+        dpi = (300 * image.width / original.width,
+               300 * image.height / original.height)
+        for quality in (85, 80, 75, 70):
+            with BytesIO() as buffer:
+                image.save(buffer, format="PDF", dpi=dpi,
+                           quality=quality, optimize=True)
+                if buffer.tell() < SMALL_PDF_LIMIT:
+                    return buffer.getvalue()
+    raise ValueError(f"could not create a PDF under {SMALL_PDF_LIMIT:,} bytes")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="image to convert (including HEIC)")
-    parser.add_argument("-p", "--pdf", action="store_true",
-                        help="write a single-page PDF instead of a JPEG")
+    formats = parser.add_mutually_exclusive_group()
+    formats.add_argument("-p", "--pdf", action="store_true",
+                         help="write a single-page PDF instead of a JPEG")
+    formats.add_argument("--pdf-small", action="store_true",
+                         help="write a compressed PDF under 300 KB")
     args = parser.parse_args()
-    output = args.input.with_suffix(".pdf" if args.pdf else ".jpg")
+    if args.pdf_small:
+        output = args.input.with_name(f"{args.input.stem}-small.pdf")
+    else:
+        output = args.input.with_suffix(".pdf" if args.pdf else ".jpg")
     if output.exists() or output.is_symlink():
         parser.exit(1, f"{parser.prog}: output already exists: {output}\n")
 
@@ -26,9 +51,12 @@ def main():
     try:
         with Image.open(args.input) as image:
             rgb = ImageOps.exif_transpose(image).convert("RGB")
+            compressed = small_pdf(rgb) if args.pdf_small else None
             with output.open("xb") as destination:
                 try:
-                    if args.pdf:
+                    if compressed is not None:
+                        destination.write(compressed)
+                    elif args.pdf:
                         rgb.save(destination, format="PDF", resolution=300,
                                  quality=95)
                     else:
