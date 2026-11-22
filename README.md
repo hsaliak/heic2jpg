@@ -1,6 +1,6 @@
 # heic2jpg
 
-Convert a HEIC image to JPEG from the command line.
+Convert a HEIC image to JPEG or PDF from the command line.
 
 ## Install dependencies
 
@@ -16,7 +16,13 @@ python -m pip install -r requirements.txt
 ./heic2jpg path/to/photo.HEIC
 ```
 
-The command writes `path/to/photo.jpg` and prints its path. It leaves the original image unchanged and does not overwrite an existing output file.
+By default, the command writes `path/to/photo.jpg`. Use `-p` (or `--pdf`) to write a single-page PDF instead:
+
+```sh
+./heic2jpg -p path/to/photo.HEIC
+```
+
+This writes `path/to/photo.pdf`. The command prints the output path, leaves the original image unchanged, and does not overwrite an existing output file.
 
 ## License
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert an image to a JPEG in the same directory."""
+"""Convert an image to JPEG or PDF in the same directory."""
 
 import argparse
 from pathlib import Path
@@ -8,8 +8,10 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="image to convert (including HEIC)")
+    parser.add_argument("-p", "--pdf", action="store_true",
+                        help="write a single-page PDF instead of a JPEG")
     args = parser.parse_args()
-    output = args.input.with_suffix(".jpg")
+    output = args.input.with_suffix(".pdf" if args.pdf else ".jpg")
     if output.exists() or output.is_symlink():
         parser.exit(1, f"{parser.prog}: output already exists: {output}\n")
 
@@ -26,9 +28,13 @@ def main():
             rgb = ImageOps.exif_transpose(image).convert("RGB")
             with output.open("xb") as destination:
                 try:
-                    rgb.save(destination, format="JPEG", quality=95,
-                             icc_profile=rgb.info.get("icc_profile"))
-                except OSError:
+                    if args.pdf:
+                        rgb.save(destination, format="PDF", resolution=300,
+                                 quality=95)
+                    else:
+                        rgb.save(destination, format="JPEG", quality=95,
+                                 icc_profile=rgb.info.get("icc_profile"))
+                except (OSError, ValueError):
                     output.unlink()
                     raise
     except (OSError, ValueError, Image.DecompressionBombError) as exc:
