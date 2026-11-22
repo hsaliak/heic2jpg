@@ -1,0 +1,6 @@
+*.[Hh][Ee][Ii][Cc]
+*.[Hh][Ee][Ii][Ff]
+/imgs/
+/.venv/
+__pycache__/
+/slop.db*
